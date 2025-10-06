@@ -98,6 +98,45 @@ export async function getNews(symbols?: string[]): Promise<MarketNewsArticle[]> 
   }
 }
 
+
+interface StockProfile {
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  currency?: string;
+  cusip?: string;
+  isin?: string;
+  lei?: string;
+  sedol?: string;
+  name?: string;
+  alias?: string;
+  ticker?: string;
+  exchange?: string;
+  finnhubIndustry?: string;
+  industry?: string;
+  industryGroup?: string;
+  sector?: string;
+  subIndustry?: string;
+  businessSummary?: string;
+  employeeNumber?: number;
+  ipoDate?: string;
+  marketCapitalizationCurrency?: string;
+  naicsIndustry?: string;
+  naicsNationalIndustry?: string;
+  naicsSector?: string;
+  naicsSubsector?: string;
+  website?: string;
+  investorRelationsWebsite?: string;
+  logo?: string;
+  phone?: string;
+}
+
+// A new type to avoid using 'any'
+type FinnhubSearchResultWithExchange = FinnhubSearchResult & {
+  __exchange?: string;
+};
+
 export const searchStocks = cache(async (query?: string): Promise<StockWithWatchlistStatus[]> => {
   try {
     const token = process.env.FINNHUB_API_KEY ?? NEXT_PUBLIC_FINNHUB_API_KEY;
@@ -109,7 +148,7 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
 
     const trimmed = typeof query === 'string' ? query.trim() : '';
 
-    let results: FinnhubSearchResult[] = [];
+    let results: FinnhubSearchResultWithExchange[] = [];
 
     if (!trimmed) {
       // Fetch top 10 popular symbols' profiles
@@ -119,11 +158,11 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
           try {
             const url = `${FINNHUB_BASE_URL}/stock/profile2?symbol=${encodeURIComponent(sym)}&token=${token}`;
             // Revalidate every hour
-            const profile = await fetchJSON<any>(url, 3600);
-            return { sym, profile } as { sym: string; profile: any };
+            const profile = await fetchJSON<StockProfile>(url, 3600);
+            return { sym, profile };
           } catch (e) {
             console.error('Error fetching profile2 for', sym, e);
-            return { sym, profile: null } as { sym: string; profile: any };
+            return { sym, profile: null };
           }
         })
       );
@@ -134,19 +173,16 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
           const name: string | undefined = profile?.name || profile?.ticker || undefined;
           const exchange: string | undefined = profile?.exchange || undefined;
           if (!name) return undefined;
-          const r: FinnhubSearchResult = {
+          const r: FinnhubSearchResultWithExchange = {
             symbol,
             description: name,
             displaySymbol: symbol,
             type: 'Common Stock',
+            __exchange: exchange,
           };
-          // We don't include exchange in FinnhubSearchResult type, so carry via mapping later using profile
-          // To keep pipeline simple, attach exchange via closure map stage
-          // We'll reconstruct exchange when mapping to final type
-          (r as any).__exchange = exchange; // internal only
           return r;
         })
-        .filter((x): x is FinnhubSearchResult => Boolean(x));
+        .filter((x): x is FinnhubSearchResultWithExchange => Boolean(x));
     } else {
       const url = `${FINNHUB_BASE_URL}/search?q=${encodeURIComponent(trimmed)}&token=${token}`;
       const data = await fetchJSON<FinnhubSearchResponse>(url, 1800);
@@ -158,7 +194,7 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
         const upper = (r.symbol || '').toUpperCase();
         const name = r.description || upper;
         const exchangeFromDisplay = (r.displaySymbol as string | undefined) || undefined;
-        const exchangeFromProfile = (r as any).__exchange as string | undefined;
+        const exchangeFromProfile = r.__exchange as string | undefined;
         const exchange = exchangeFromDisplay || exchangeFromProfile || 'US';
         const type = r.type || 'Stock';
         const item: StockWithWatchlistStatus = {
@@ -178,3 +214,4 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
     return [];
   }
 });
+
