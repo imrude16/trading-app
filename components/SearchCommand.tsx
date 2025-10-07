@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react"
 import { CommandDialog, CommandEmpty, CommandInput, CommandList } from "@/components/ui/command"
 import {Button} from "@/components/ui/button";
-import {Loader2,  TrendingUp} from "lucide-react";
-import Link from "next/link";
-import {searchStocks} from "@/lib/actions/finnhub.action";
-import {useDebounce} from "@/components/hooks/useDebounce";
+import {Loader2,  TrendingUp} from "lucide-react"
+import Link from "next/link"
+import {searchStocks} from "@/lib/actions/finnhub.action"
+import {useDebounce} from "@/components/hooks/useDebounce"
 
 export default function SearchCommand({ renderAs = 'button', label = 'Add stock', initialStocks }: SearchCommandProps) {
   const [open, setOpen] = useState(false)
@@ -33,7 +33,7 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
 
     setLoading(true)
     try {
-        const results = await searchStocks(searchTerm.trim());
+        const results = await searchStocks(searchTerm.trim())
         setStocks(results);
     } catch {
       setStocks([])
@@ -46,7 +46,7 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
 
   useEffect(() => {
     debouncedSearch();
-  }, [searchTerm]);
+  }, [debouncedSearch ,searchTerm])
 
   const handleSelectStock = () => {
     setOpen(false);
@@ -83,7 +83,7 @@ export default function SearchCommand({ renderAs = 'button', label = 'Add stock'
                 {isSearchMode ? 'Search results' : 'Popular stocks'}
                 {` `}({displayStocks?.length || 0})
               </div>
-              {displayStocks?.map((stock, i) => (
+              {displayStocks?.map((stock) => (
                   <li key={stock.symbol} className="search-item">
                     <Link
                         href={`/stock/${stock.symbol}`}
