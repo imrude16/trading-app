@@ -15,7 +15,7 @@ export const getAuth = async () => {
     authInstance = betterAuth({
         database: mongodbAdapter(db as Db),
         
-        secret: process.env.BTTER_AUTH_SECRET,
+        secret: process.env.BETTER_AUTH_SECRET,
         baseURL: process.env.BETTER_AUTH_URL,
         emailAndPassword:{
             enabled: true,
