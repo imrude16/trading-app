@@ -20,8 +20,10 @@ export const signUpWithEmail = async ({ email, password, fullName, country, inve
 
         return { success: true, data: response }
     } catch (e) {
-        console.log('Sign up failed', e)
-        return { success: false, error: 'Sign up failed' }
+        console.error('Sign up error:', e);
+        const errorMessage = e instanceof Error ? e.message : JSON.stringify(e);
+        console.error('Detailed error:', errorMessage);
+        return { success: false, error: 'Sign up failed', details: errorMessage }
     }
 }
 
